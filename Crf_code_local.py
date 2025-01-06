@@ -3,9 +3,9 @@ from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import os
+
 # Initialize the Dash app
 app = dash.Dash(__name__,suppress_callback_exceptions=True)
-server = app.server
 
 login_layout = html.Div(
     children=[
@@ -893,7 +893,7 @@ def save_section1(n_clicks, input_id, age, gender, admission_date, diagnosis, us
 
         # --- Check if record already exists for the current user (Site Name) and ID ---
         user_record = data[(data['ID'] == input_id) & (data['Site Name'] == user_id)]
-        
+       # print("Filtered user record:", user_record)
         # --- Case 1: Record exists (UPDATE logic) ---
         if not user_record.empty:
             index = user_record.index[0]  # Get the row index of the existing record
@@ -1093,21 +1093,30 @@ def save_section3(n_clicks, stored_id, bal_performed, bal_date, random_group, bi
 
 
 @app.callback(
-    Output('stored-user-data', 'data'),  # Store user data globally
-    Input('existing-user-id', 'value')  # Selected user ID
+    Output('stored-user-data', 'data'),
+    Input('existing-user-id', 'value'),
+    State('auth-state', 'data')  # User ID as Site Name from authentication
 )
-def load_user_data(user_id):
-    if user_id:
+def load_user_data(user_id, auth_site):
+   # print("Selected User ID:", user_id)  # Debugging line
+   # print("Authenticated Site Name:", auth_site)  # Debugging line
+
+    if user_id and auth_site:
         file_path = "user_data.xlsx"
         if os.path.exists(file_path):
             # Read Excel and enforce ID as string
             data = pd.read_excel(file_path, dtype={"ID": str})
-            # Find the data for the selected ID
-            user_data = data[data['ID'] == str(user_id)].to_dict('records')
+            print("Available Data:", data.head())  # Check data before filtering
+
+            # Filter data by both Site Name (auth_site) and ID
+            user_data = data[(data['ID'] == str(user_id)) & (data['Site Name'] == auth_site)].to_dict('records')
 
             if user_data:
+                print("Filtered User Data:", user_data)  # Debugging line
                 return user_data[0]  # Return first match as a dictionary
+
     return {}  # Return empty if no data found
+
 
 
 @app.callback(
@@ -1118,11 +1127,24 @@ def load_user_data(user_id):
     State('stored-user-data', 'data')
 )
 def prefill_section1(pathname, section1_data):
+    print("\n---- Prefill Callback Triggered ----")
+    print("Pathname:", pathname)
+    print("Section 1 Data:", section1_data)
+
     if pathname == '/section1' and section1_data:
-        return (section1_data.get("ID"), section1_data.get("Age"),
-                section1_data.get("Gender"), section1_data.get("Admission Date"),
-                section1_data.get("Primary Diagnosis"))
-    return dash.no_update
+        site_name = section1_data.get("Site Name")
+        input_id = section1_data.get("ID")
+
+        # Check if the stored data matches the required ID and Site Name
+        if site_name and input_id:
+            print("Returning Data for Site Name:", site_name, "and ID:", input_id)
+            return (input_id, section1_data.get("Age"),
+                    section1_data.get("Gender"), section1_data.get("Admission Date"),
+                    section1_data.get("Primary Diagnosis"))
+
+    print("No Matching Data Found. Returning dash.no_update.")
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
 
 
 
