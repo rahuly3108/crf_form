@@ -5,6 +5,7 @@ import pandas as pd
 import os
 # Initialize the Dash app
 app = dash.Dash(__name__,suppress_callback_exceptions=True)
+server = app.server
 
 login_layout = html.Div(
     children=[
