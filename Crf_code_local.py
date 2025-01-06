@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[73]:
-
-
 import dash
 from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
@@ -1174,3 +1168,7 @@ def prefill_section3(pathname, data):
     
     # Use dash.no_update to prevent clearing existing values
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+# Run the Dash app
+if __name__ == '__main__':
+    app.run_server(debug=True, port=223)
